@@ -1,5 +1,6 @@
 # VkMusic
 vk.com music downloader using VK API.
+[Latest build] (https://github.com/andrew2509/VkMusic/releases/latest)
 # Usage:
 `-d <dir>` to download files in specific dir
 
