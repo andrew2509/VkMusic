@@ -6,5 +6,10 @@ vk.com music downloader using VK API.
 
 `-m ` to enable mobile filenames ("ownerid_aid")  
 
-`-k <api key>` use vk api key
+`-k <api key>` to use vk api key
+
+`-o <owner_id>` to specify owner of song list
+
+`-a <album_id>` to specify music album
+
 
