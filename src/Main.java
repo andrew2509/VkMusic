@@ -45,7 +45,7 @@ public class Main {
                 i++;
             }
             if (args[i].equals("-o")){
-                albumId = Integer.parseInt(args[i + 1]);
+                ownerId = Integer.parseInt(args[i + 1]);
                 i++;
             }
         }
