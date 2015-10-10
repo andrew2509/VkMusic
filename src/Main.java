@@ -18,6 +18,8 @@ public class Main {
     public static Path path;
     public static String apiLink = "https://oauth.vk.com/authorize?client_id=5096323&scope=audio&redirect_uri=https://oauth.vk.com/blank.html&display=page&v=5.37&response_type=token";
     public static boolean mobileNames = false;
+    public static int albumId = -1;
+    public static int ownerId = -1;
 
     public static void main(String[] args) {
         String key = null;
@@ -35,8 +37,16 @@ public class Main {
                 mobileNames = true;
             }
             if (args[i].equals("-h")){
-                System.out.println("-d <dir> \n-k <api key> \n-m Enable mobile filenames");
+                System.out.println("-d <dir> \n-k <api key> \n-m Enable mobile filenames\n-a <album_id>\n-o <owner_id>\n");
                 System.exit(0);
+            }
+            if (args[i].equals("-a")){
+                albumId = Integer.parseInt(args[i + 1]);
+                i++;
+            }
+            if (args[i].equals("-o")){
+                albumId = Integer.parseInt(args[i + 1]);
+                i++;
             }
         }
         path = Paths.get(dir);
@@ -130,7 +140,7 @@ public class Main {
             JsonElement jse = new JsonParser().parse(response);
             JsonObject resp = jse.getAsJsonObject();
             if (resp.has("error")){
-                System.err.println("Wrong api key");
+                System.err.println("Wrong permissions");
                 System.exit(1);
             }
             if (!resp.has("response")) throw new JsonParseException("No song data in response");
@@ -166,6 +176,8 @@ public class Main {
 
     private static String getResponse(String key) {
         String request = "https://api.vk.com/method/audio.get?access_token=" + key;
+        if (ownerId != -1) request+= "&owner_id=" + ownerId;
+        if (ownerId != -1) request+= "&album_id=" + albumId;
         StringBuilder response = new StringBuilder();
         try {
             URL url = new URL(request);
