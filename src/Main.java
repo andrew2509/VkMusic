@@ -3,7 +3,6 @@ import com.google.gson.*;
 import java.awt.*;
 import java.io.*;
 import java.net.*;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -16,7 +15,9 @@ import java.util.Scanner;
 public class Main {
 
     public static Path path;
-    public static String apiLink = "https://oauth.vk.com/authorize?client_id=5096323&scope=audio&redirect_uri=https://oauth.vk.com/blank.html&display=page&v=5.37&response_type=token";
+    public static String getToken = "https://oauth.vk.com/authorize?client_id=5096323&scope=audio&display=page&v=5.37&response_type=token";
+    public static String getApiCode = "https://oauth.vk.com/authorize?client_id=5096323&scope=audio&display=page&v=5.37&response_type=code&redirect_uri=http://127.0.0.1:7856/";
+    public static String getApiToken = "https://oauth.vk.com/access_token?client_id=5096323&client_secret=I8ErT0wpoMX9RHxecJ3I&redirect_uri=http://127.0.0.1:7856/&code=";
     public static boolean mobileNames = false;
     public static int albumId = -1;
     public static int ownerId = -1;
@@ -50,8 +51,9 @@ public class Main {
             }
         }
         path = Paths.get(dir);
+
         if (key == null){
-            key = getKey();
+            key = getAccessKey();
         }
         String response = getResponse(key);
         ArrayList<Song> songList = getList(response);
@@ -161,17 +163,80 @@ public class Main {
         return list;
     }
 
-    private static String getKey() {
+    private static String getAppCode() throws IOException {
+        URL urlCode = null;
         try {
-            openWebpage(new URL(apiLink));
+            urlCode = new URL(getApiCode);
         } catch (MalformedURLException e) {
             e.printStackTrace();
             System.exit(1);
         }
-        Scanner sc = new Scanner(System.in);
-        System.out.println("Enter api key");
-        String key = sc.next();
-        return key;
+        LightHTTP httpServer = new LightHTTP(7856);
+        Thread t = new Thread(httpServer);
+        t.start();
+        openWebpage(urlCode);
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        httpServer.destroy();
+        return httpServer.getCode();
+    }
+
+    private static String getAccessKey() {
+        String accessKey = null;
+        URL url = null;
+        try {
+            url = new URL(getToken);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+        try {
+            String code = getAppCode();
+            URL urlToken = new URL(getApiToken + code);
+
+            HttpURLConnection connection = (HttpURLConnection)urlToken.openConnection();
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null){
+                response.append(line);
+            }
+            in.close();
+            JsonElement jse = new JsonParser().parse(response.toString());
+            JsonObject resp = jse.getAsJsonObject();
+            if (resp.has("error")){
+                System.err.println("Wrong permissions");
+                System.exit(1);
+            }
+            if (!resp.has("access_token")) throw new JsonParseException("No access token data in response");
+            return resp.getAsJsonPrimitive("access_token").getAsString();
+
+        }
+        catch (IOException e) {
+            openWebpage(url);
+
+            e.printStackTrace();
+            Scanner sc = new Scanner(System.in);
+            System.out.println("Enter api key");
+            String key = sc.next();
+            return key;
+        }
+        catch (JsonParseException e){
+            System.err.println("Error parsing access token");
+            e.printStackTrace();
+            System.exit(1);
+
+        }
+
+
+
+        return accessKey;
+
     }
 
     private static String getResponse(String key) {
